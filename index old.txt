@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop Catalog | Susan-mini-crochet</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js">
+  </script>
+</head>
+<body>
+
+  <div id="announcement-bar" class="announcement-bar">
+    ✨ Handmade with love | UPI, Bank Transfer & COD Available!
+  </div>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand-logo">🧶 <span class="store-name-text">Susan-mini-crochet</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop Catalog</a></li>
+      <li><a href="about.html">About & Care</a></li>
+      <li><a href="contact.html">Contact & FAQ</a></li>
+    </ul>
+    <button class="cart-btn" onclick="toggleCart()">
+      🛒 Cart <span class="cart-count">0</span>
+    </button>
+  </nav>
+
+  <section class="container">
+    <div class="section-header">
+      <h2>🧶 Shop Our Crochet Collection</h2>
+      <p>Filter by category, search, or sort by price</p>
+    </div>
+
+    <!-- Search, Price Sort & Editable Category Filter Bar -->
+    <div class="catalog-controls">
+      <div class="search-sort-row">
+        <div class="search-box">
+          <input
+            type="text"
+            id="shop-search"
+            placeholder="Search keychains, flowers, plushies..."
+            oninput="filterProducts()"
+          />
+        </div>
+        <div class="sort-box">
+          <select id="shop-sort" onchange="filterProducts()">
+            <option value="default">Sort by: Featured</option>
+            <option value="price-asc">Price: Low to High (₹)</option>
+            <option value="price-desc">Price: High to Low (₹)</option>
+            <option value="name-asc">Name: A to Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="category-filter-bar" class="filter-bar"></div>
+    </div>
+
+    <div id="shop-grid" class="product-grid"></div>
+  </section>
+
+  <!-- Shared Slide-Out Cart Drawer -->
+  <div id="cart-overlay" class="cart-overlay">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <h3>🛒 Your Crochet Basket</h3>
+        <button class="close-cart" onclick="toggleCart(false)">×</button>
+      </div>
+      <div class="cart-body">
+        <div id="cart-items-list"></div>
+
+        <form id="whatsapp-order-form" class="checkout-form" onsubmit="checkoutWhatsApp(event)">
+          <h4>Delivery & Payment Details</h4>
+          <div class="form-group">
+            <label for="cust-name">Full Name *</label>
+            <input type="text" id="cust-name" required placeholder="Enter your name" />
+          </div>
+          <div class="form-group">
+            <label for="cust-phone">WhatsApp / Phone Number *</label>
+            <input type="tel" id="cust-phone" required placeholder="10-digit mobile number" />
+          </div>
+          <div class="form-group">
+            <label for="cust-address">Full Delivery Address (with PIN code) *</label>
+            <textarea id="cust-address" rows="3" required placeholder="House No, Street, Locality, City, State, PIN"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Select Payment Method *</label>
+            <div class="payment-options">
+              <label class="payment-option">
+                <input type="radio" name="payment-method" value="UPI (GPay / PhonePe / Paytm)" checked />
+                UPI (GPay / PhonePe / Paytm)
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="payment-method" value="Bank Transfer" />
+                Bank Transfer
+              </label>
+              <label class="payment-option" id="cod-option-wrap">
+                <input type="radio" name="payment-method" value="Cash on Delivery (COD)" />
+                Cash on Delivery (COD)
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="whatsapp-checkout-btn">
+            💬 Send Order on WhatsApp
+          </button>
+        </form>
+      </div>
+      <div class="cart-footer">
+        <div class="cart-summary-row">
+          <span>Subtotal</span>
+          <span id="cart-subtotal">₹0</span>
+        </div>
+        <div class="cart-summary-row">
+          <span>Shipping</span>
+          <span id="cart-shipping">₹0</span>
+        </div>
+        <div class="cart-total-row">
+          <span>Total</span>
+          <span id="cart-total">₹0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Follow <strong class="store-name-text">Susan-mini-crochet</strong> on social media:</p>
+    <div class="social-links-container"></div>
+    <p>© 2026 <strong class="store-name-text">Susan-mini-crochet</strong>. Handmade with love.</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.netlifyIdentity.on("login", () => {
+          document.location.href = "/admin/";
+        });
+      }
+    });
+  }
+  </script>
+</body>
+</html>

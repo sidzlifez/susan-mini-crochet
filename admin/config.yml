@@ -1,0 +1,126 @@
+backend:
+  name: git-gateway
+  branch: main
+
+# Cloudinary Media Library Integration
+media_library:
+  name: cloudinary
+  config:
+    cloud_name: aielb7zs
+    api_key: 628545332299519
+    default_transformations:
+      - - fetch_format: auto
+          quality: auto
+          width: 800
+          crop: limit
+
+# Fallback folder settings required by Decap CMS
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "store_manager"
+    label: "🧶 Susan-mini-crochet Manager"
+    files:
+      - name: "store_data"
+        label: "Manage Products, Categories, Settings & Pages"
+        file: "data/store.json"
+        fields:
+          # 1. GENERAL STORE SETTINGS & SOCIAL LINKS
+          - label: "⚙️ Store Settings, Shipping & Social Links"
+            name: "settings"
+            widget: "object"
+            collapsed: true
+            fields:
+              - { label: "Store Name", name: "storeName", widget: "string", default: "Susan-mini-crochet" }
+              - { label: "Tagline", name: "tagline", widget: "string" }
+              - { label: "Top Announcement Bar", name: "announcement", widget: "string" }
+              - { label: "WhatsApp Number (with country code, no '+')", name: "whatsappNumber", widget: "string", hint: "Example: 919876543210" }
+              - { label: "Contact Email", name: "email", widget: "string" }
+              - { label: "Location / Delivery Text", name: "location", widget: "string" }
+              - { label: "Currency Symbol", name: "currency", widget: "string", default: "₹" }
+              - { label: "Standard Shipping Fee (₹)", name: "shippingFee", widget: "number", value_type: "int", default: 60 }
+              - { label: "Free Shipping Above (₹)", name: "freeShippingAbove", widget: "number", value_type: "int", default: 999 }
+              - { label: "Enable Cash on Delivery (COD)?", name: "enableCOD", widget: "boolean", default: true }
+              - label: "Social Media Links"
+                name: "socialLinks"
+                widget: "object"
+                fields:
+                  - { label: "Instagram URL", name: "instagram", widget: "string", required: false }
+                  - { label: "Facebook URL", name: "facebook", widget: "string", required: false }
+                  - { label: "YouTube URL", name: "youtube", widget: "string", required: false }
+
+          # 2. PROMO & DISCOUNT CODES
+          - label: "🎟️ Promo & Discount Codes"
+            name: "promoCodes"
+            widget: "list"
+            summary: "{{fields.code}} — {{fields.discountValue}}% / Flat ₹{{fields.discountValue}}"
+            fields:
+              - { label: "Promo Code (e.g., SUSAN10)", name: "code", widget: "string" }
+              - { label: "Discount Type", name: "discountType", widget: "select", options: ["percentage", "flat"] }
+              - { label: "Discount Value (Enter number like 10 for 10% or 50 for ₹50)", name: "discountValue", widget: "number", value_type: "int" }
+              - { label: "Minimum Order Value (₹)", name: "minOrderValue", widget: "number", value_type: "int", required: false, default: 0 }
+
+          # 3. EDITABLE CATEGORY FILTER BAR
+          - label: "🏷️ Shop Category Filter Buttons"
+            name: "categories"
+            widget: "list"
+            hint: "Add, rename, reorder, or delete category buttons shown on the Shop Filter Bar."
+            field: { label: "Category Name", name: "category", widget: "string" }
+
+          # 4. CROCHET PRODUCTS CATALOG (WITH MULTI-PHOTOS VIA CLOUDINARY)
+          - label: "🛍️ Crochet Products Catalog"
+            name: "products"
+            widget: "list"
+            summary: "{{fields.name}} — ₹{{fields.price}} ({{fields.category}})"
+            fields:
+              - { label: "Unique Product ID (e.g., prod-7)", name: "id", widget: "string" }
+              - { label: "Product Name", name: "name", widget: "string" }
+              - { label: "Category", name: "category", widget: "string" }
+              - { label: "Price (₹)", name: "price", widget: "number", value_type: "int" }
+              - { label: "Badge (e.g., Ready to Ship, Bestseller)", name: "badge", widget: "string", required: false }
+              - { label: "Show on Home Page Featured Section?", name: "featured", widget: "boolean", default: false }
+              - { label: "In Stock?", name: "inStock", widget: "boolean", default: true }
+              - label: "Product Photos (Add multiple photos for slider)"
+                name: "images"
+                widget: "list"
+                field: { label: "Photo", name: "image", widget: "image" }
+              - { label: "Basic Description (2-3 lines)", name: "description", widget: "text" }
+
+          # 5. CUSTOMER TESTIMONIALS
+          - label: "💖 Customer Testimonials (Home Page)"
+            name: "testimonials"
+            widget: "list"
+            collapsed: true
+            fields:
+              - { label: "Customer Name", name: "name", widget: "string" }
+              - { label: "Review Text", name: "text", widget: "text" }
+
+          # 6. ABOUT & CROCHET CARE GUIDE PAGE
+          - label: "🫧 About & Care Guide Page"
+            name: "about"
+            widget: "object"
+            collapsed: true
+            fields:
+              - { label: "Story Heading", name: "title", widget: "string" }
+              - { label: "Subtitle", name: "subtitle", widget: "string", required: false }
+              - { label: "About Photo", name: "image", widget: "image" }
+              - { label: "Story Paragraph 1", name: "storyParagraph1", widget: "text" }
+              - { label: "Story Paragraph 2", name: "storyParagraph2", widget: "text" }
+              - { label: "Highlighted Quote Box", name: "highlightQuote", widget: "text", required: false }
+              - label: "Crochet Care Instruction Cards"
+                name: "careTips"
+                widget: "list"
+                fields:
+                  - { label: "Emoji Icon", name: "icon", widget: "string" }
+                  - { label: "Care Tip Title", name: "title", widget: "string" }
+                  - { label: "Care Tip Description", name: "text", widget: "text" }
+
+          # 7. FREQUENTLY ASKED QUESTIONS
+          - label: "❓ Frequently Asked Questions (Contact Page)"
+            name: "faqs"
+            widget: "list"
+            collapsed: true
+            fields:
+              - { label: "Question", name: "question", widget: "string" }
+              - { label: "Answer", name: "answer", widget: "text" }
