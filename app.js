@@ -69,7 +69,7 @@ function injectUpiQrContainer() {
   qrBox.className = 'upi-qr-container';
   qrBox.innerHTML = `
     <p><strong>Scan & Pay via GPay / PhonePe / Paytm</strong></p>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=susanminicrochet@upi" alt="UPI QR Code" id="dynamic-upi-qr" />
+    <img src="images/uploads/gpay_code.png" alt="UPI QR Code" id="dynamic-upi-qr" />
     <p>Scan with any UPI app and share screenshot on WhatsApp after placing order.</p>
   `;
   paymentOptionsEl.parentNode.insertBefore(qrBox, paymentOptionsEl.nextSibling);
