@@ -1,189 +1,3 @@
-const FALLBACK_STORE_DATA = {
-  settings: {
-    storeName: "Susan-mini-crochet",
-    tagline: "Handmade with love, one stitch at a time",
-    whatsappNumber: "919876543210",
-    email: "hello@susanminicrochet.com",
-    location: "Handmade in India | Pan-India Delivery",
-    currency: "₹",
-    announcement: "✨ Free shipping on orders above ₹999 | COD & UPI Available!",
-    shippingFee: 60,
-    freeShippingAbove: 999,
-    enableCOD: true,
-    socialLinks: {
-      instagram: "https://instagram.com/",
-      facebook: "https://facebook.com/",
-      youtube: "https://youtube.com/"
-    }
-  },
-  promoCodes: [
-    {
-      code: "SUSAN10",
-      discountType: "percentage",
-      discountValue: 10,
-      minOrderValue: 300
-    },
-    {
-      code: "FLAT50",
-      discountType: "flat",
-      discountValue: 50,
-      minOrderValue: 500
-    }
-  ],
-  categories: [
-    "Keychains",
-    "Crochet Flowers",
-    "Amigurumi Plushies",
-    "Bags & Pouches",
-    "Coasters & Decor"
-  ],
-  products: [
-    {
-      id: "prod-1",
-      name: "Mini Strawberry Keychain",
-      category: "Keychains",
-      price: 149,
-      badge: "Ready to Ship",
-      featured: true,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1615486511484-92e172cc4fe0?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Soft 100% milk cotton yarn strawberry charm with a rust-free gold lobster clasp. Size: 6 cm."
-    },
-    {
-      id: "prod-2",
-      name: "Pastel Tulip Bouquet (3 Stems)",
-      category: "Crochet Flowers",
-      price: 499,
-      badge: "Bestseller",
-      featured: true,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Everlasting handmade crochet tulips wrapped in pastel kraft paper with bendable wire stems. Height: 28 cm."
-    },
-    {
-      id: "prod-3",
-      name: "Chubby Bee Amigurumi Plushie",
-      category: "Amigurumi Plushies",
-      price: 349,
-      badge: "Ready to Ship",
-      featured: true,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1559454403-b8fb88521f11?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Cuddly pocket-sized bee stuffed with hypoallergenic polyfill and safety eyes. Size: 10 cm."
-    },
-    {
-      id: "prod-4",
-      name: "Daisy Granny Square Tote Bag",
-      category: "Bags & Pouches",
-      price: 899,
-      badge: "Made to Order",
-      featured: true,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Sturdy pastel pink & cream daisy squares with inner cotton lining and magnetic snap button. Fits notebooks & essentials."
-    },
-    {
-      id: "prod-5",
-      name: "Sunflower Bag Charm Keychain",
-      category: "Keychains",
-      price: 179,
-      badge: "Ready to Ship",
-      featured: false,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Bright double-layered crochet sunflower keychain that clips easily onto backpacks, purses, or house keys. Diameter: 7 cm."
-    },
-    {
-      id: "prod-6",
-      name: "Floral Mug Coaster Set (Set of 2)",
-      category: "Coasters & Decor",
-      price: 249,
-      badge: "Ready to Ship",
-      featured: false,
-      inStock: true,
-      images: [
-        "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80"
-      ],
-      description: "Heat-absorbent cotton yarn coasters in blush pink and cream with scalloped petal edges. Washable & reusable."
-    }
-  ],
-  testimonials: [
-    {
-      name: "Priya S.",
-      text: "Ordered the strawberry keychain and tulip bouquet—the stitching is so neat and packaging was adorable!"
-    },
-    {
-      name: "Ananya M.",
-      text: "Loved how easy it was to order on WhatsApp with UPI. The Daisy Tote bag is my new daily favorite."
-    },
-    {
-      name: "Roshni K.",
-      text: "Super soft yarn and exact pastel shades shown in the photos. Will definitely order more gifts from Susan-mini-crochet!"
-    }
-  ],
-  about: {
-    title: "The Story Behind Susan-mini-crochet",
-    subtitle: "Slow-crafted keepsakes stitched with patience, warmth, and premium soft yarns.",
-    image: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80",
-    storyParagraph1: "Welcome to Susan-mini-crochet! What started as a cozy passion for turning soft pastel yarn into tiny charms for friends and family has blossomed into a dedicated handmade crochet studio.",
-    storyParagraph2: "Every single keychain, everlasting flower bouquet, plushie, and bag in our catalog is 100% hand-crocheted stitch by stitch. Unlike mass-produced items, each piece carries the warmth and durability of careful handcraftsmanship.",
-    highlightQuote: "We use skin-friendly milk cotton and premium acrylic yarns so your crochet treasures stay soft, vibrant, and huggable for years.",
-    careTips: [
-      {
-        icon: "🫧",
-        title: "Gentle Hand Wash Only",
-        text: "Soak gently in cool or lukewarm water with a mild liquid detergent or baby shampoo. Avoid harsh wringing or scrubbing."
-      },
-      {
-        icon: "🌬️",
-        title: "Air Dry Flat in Shade",
-        text: "Press out excess water gently with a clean towel and lay flat on a dry surface away from direct harsh sunlight."
-      },
-      {
-        icon: "🚫",
-        title: "No Machine Wash or Bleach",
-        text: "Never use a washing machine, tumble dryer, bleach, or hot iron, as heat and friction can stretch or fuzz the yarn fibers."
-      },
-      {
-        icon: "💐",
-        title: "Dusting Crochet Flowers",
-        text: "For crochet flower bouquets, use a soft makeup brush or cool hairdryer setting from a distance to keep petals dust-free."
-      }
-    ]
-  },
-  faqs: [
-    {
-      question: "How do I place an order on Susan-mini-crochet?",
-      answer: "Simply browse our Shop Catalog, click 'Add to Cart' on the items you love, open your Cart Drawer, enter your delivery address, choose UPI, Bank Transfer, or Cash on Delivery (COD), and click 'Send Order on WhatsApp'."
-    },
-    {
-      question: "What is the difference between 'Ready to Ship' and 'Made to Order'?",
-      answer: "'Ready to Ship' items are dispatched within 1–2 business days. 'Made to Order' pieces are freshly crocheted for you and take 3–5 business days before dispatch."
-    },
-    {
-      question: "Do you offer Cash on Delivery (COD)?",
-      answer: "Yes! You can select UPI (GPay, PhonePe, Paytm), Bank Transfer, or Cash on Delivery (COD) right inside the checkout cart."
-    },
-    {
-      question: "How much is shipping and how long does delivery take?",
-      answer: "Standard shipping is ₹60 across India, and FREE on orders above ₹999. Delivery usually takes 4–7 business days depending on your PIN code."
-    }
-  ]
-};
-
 let storeData = null;
 let cart = JSON.parse(localStorage.getItem('susanCrochetCart')) || [];
 let activeCategory = 'All';
@@ -196,8 +10,8 @@ async function initStore() {
     if (!response.ok) throw new Error('HTTP error ' + response.status);
     storeData = await response.json();
   } catch (err) {
-    console.warn('Using built-in fallback store data (local file mode):', err.message);
-    storeData = FALLBACK_STORE_DATA;
+    console.error('Error loading store.json data:', err);
+    return;
   }
 
   applyStoreSettings();
@@ -243,6 +57,40 @@ function applyStoreSettings() {
   }
 
   renderFloatingWhatsApp(whatsappNumber, storeName);
+  injectUpiQrContainer();
+}
+
+function injectUpiQrContainer() {
+  const paymentOptionsEl = document.querySelector('.payment-options');
+  if (!paymentOptionsEl || document.getElementById('upi-qr-box')) return;
+
+  const qrBox = document.createElement('div');
+  qrBox.id = 'upi-qr-box';
+  qrBox.className = 'upi-qr-container';
+  qrBox.innerHTML = `
+    <p><strong>Scan & Pay via GPay / PhonePe / Paytm</strong></p>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=susanminicrochet@upi" alt="UPI QR Code" id="dynamic-upi-qr" />
+    <p>Scan with any UPI app and share screenshot on WhatsApp after placing order.</p>
+  `;
+  paymentOptionsEl.parentNode.insertBefore(qrBox, paymentOptionsEl.nextSibling);
+
+  const radios = document.querySelectorAll('input[name="payment-method"]');
+  radios.forEach(radio => {
+    radio.addEventListener('change', handlePaymentMethodChange);
+  });
+  handlePaymentMethodChange();
+}
+
+function handlePaymentMethodChange() {
+  const selected = document.querySelector('input[name="payment-method"]:checked');
+  const qrBox = document.getElementById('upi-qr-box');
+  if (!qrBox) return;
+
+  if (selected && selected.value.includes('UPI')) {
+    qrBox.classList.add('visible');
+  } else {
+    qrBox.classList.remove('visible');
+  }
 }
 
 function renderFloatingWhatsApp(whatsappNumber, storeName) {
@@ -520,7 +368,6 @@ function renderContactAndFaqPage() {
   }
 }
 
-/* Cart & Promo Functions */
 function saveCart() {
   localStorage.setItem('susanCrochetCart', JSON.stringify(cart));
   localStorage.setItem('susanCrochetPromo', JSON.stringify(appliedPromo));
