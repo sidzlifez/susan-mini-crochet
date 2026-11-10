@@ -621,7 +621,7 @@ body {
   border-color: var(--deep-pink);
 }
 
-/* Slide-Out Cart Drawer with Promo Box */
+/* Slide-Out Cart Drawer (Padded to prevent Netlify badge overlap) */
 .cart-overlay {
   position: fixed;
   inset: 0;
@@ -643,6 +643,7 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+  padding-bottom: 40px; /* Safe padding so Netlify badge never covers totals */
 }
 
 .cart-header {
@@ -807,10 +808,42 @@ body {
   cursor: pointer;
 }
 
+/* UPI QR Code Container Box */
+.upi-qr-container {
+  background: var(--bg-soft-pink);
+  border: 1.5px dashed var(--pastel-pink);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  margin-top: 12px;
+  display: none; /* Shown dynamically when UPI is selected */
+}
+
+.upi-qr-container.visible {
+  display: block;
+}
+
+.upi-qr-container img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin: 8px 0;
+  background: var(--white);
+  padding: 6px;
+  border: 1px solid var(--border-soft);
+}
+
+.upi-qr-container p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .cart-footer {
   padding: 16px 20px;
   background: var(--white);
   border-top: 1px solid var(--border-soft);
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.03);
 }
 
 .cart-summary-row {
