@@ -23,16 +23,18 @@ collections:
     label: "🧶 Susan-mini-crochet Manager"
     files:
       - name: "store_data"
-        label: "Manage Products, Categories, Settings & Pages"
+        label: "Manage Products, Orders, Categories, Settings & Pages"
         file: "data/store.json"
         fields:
-          # 1. GENERAL STORE SETTINGS & SOCIAL LINKS
-          - label: "⚙️ Store Settings, Shipping & Social Links"
+          # 1. GENERAL STORE SETTINGS, LOGO & SOCIAL LINKS
+          - label: "⚙️ Store Settings, Logo, Shipping & Social Links"
             name: "settings"
             widget: "object"
             collapsed: true
             fields:
               - { label: "Store Name", name: "storeName", widget: "string", default: "Susan-mini-crochet" }
+              - { label: "Store Logo Image (Optional)", name: "logo", widget: "image", required: false, hint: "Upload a transparent PNG (200x200 px square or 400x132 px wide)" }
+              - { label: "UPI / GPay QR Code Image (Optional)", name: "upiQrImage", widget: "image", required: false, hint: "Upload your GPay/PhonePe QR image (300x300 px)" }
               - { label: "Tagline", name: "tagline", widget: "string" }
               - { label: "Top Announcement Bar", name: "announcement", widget: "string" }
               - { label: "WhatsApp Number (with country code, no '+')", name: "whatsappNumber", widget: "string", hint: "Example: 919876543210" }
@@ -50,10 +52,40 @@ collections:
                   - { label: "Facebook URL", name: "facebook", widget: "string", required: false }
                   - { label: "YouTube URL", name: "youtube", widget: "string", required: false }
 
-          # 2. PROMO & DISCOUNT CODES
+          # 2. CUSTOMER ORDERS & TRACKING (FOR CUSTOMER LOGIN PORTAL)
+          - label: "📦 Customer Orders & Live Tracking"
+            name: "orders"
+            widget: "list"
+            required: false
+            collapsed: true
+            summary: "{{fields.orderId}} — {{fields.customerName}} ({{fields.phone}}) | {{fields.status}}"
+            hint: "Add or update customer orders here so customers can log in with their phone number on the website and track their order status."
+            fields:
+              - { label: "Order ID (e.g., SMC-4821)", name: "orderId", widget: "string" }
+              - { label: "Customer Name", name: "customerName", widget: "string" }
+              - { label: "Customer 10-Digit Phone Number", name: "phone", widget: "string", hint: "Example: 9876543210 (Customers use this number to log in and view their orders)" }
+              - { label: "Order Date", name: "orderDate", widget: "string", hint: "Example: 12 Nov 2026" }
+              - { label: "Items Ordered Summary", name: "itemsSummary", widget: "text", hint: "Example: Mini Strawberry Keychain (x2), Pastel Tulip Bouquet (x1)" }
+              - { label: "Total Order Amount (₹)", name: "totalAmount", widget: "number", value_type: "int" }
+              - { label: "Payment Method / Status", name: "paymentStatus", widget: "string", default: "UPI - Paid", required: false }
+              - label: "Order Status"
+                name: "status"
+                widget: "select"
+                options:
+                  - "Order Confirmed"
+                  - "Crocheting in Progress 🧶"
+                  - "Packed & Ready 🎁"
+                  - "Shipped 🚚"
+                  - "Delivered 💖"
+                default: "Order Confirmed"
+              - { label: "Courier Name & Tracking Number / Note (Optional)", name: "trackingNote", widget: "string", required: false, hint: "Example: India Post #IN123456789 — Expected in 3-4 days" }
+              - { label: "Tracking Link URL (Optional)", name: "trackingUrl", widget: "string", required: false }
+
+          # 3. PROMO & DISCOUNT CODES
           - label: "🎟️ Promo & Discount Codes"
             name: "promoCodes"
             widget: "list"
+            collapsed: true
             summary: "{{fields.code}} — {{fields.discountValue}}% / Flat ₹{{fields.discountValue}}"
             fields:
               - { label: "Promo Code (e.g., SUSAN10)", name: "code", widget: "string" }
@@ -61,23 +93,26 @@ collections:
               - { label: "Discount Value (Enter number like 10 for 10% or 50 for ₹50)", name: "discountValue", widget: "number", value_type: "int" }
               - { label: "Minimum Order Value (₹)", name: "minOrderValue", widget: "number", value_type: "int", required: false, default: 0 }
 
-          # 3. EDITABLE CATEGORY FILTER BAR
+          # 4. EDITABLE CATEGORY FILTER BAR
           - label: "🏷️ Shop Category Filter Buttons"
             name: "categories"
             widget: "list"
+            collapsed: true
             hint: "Add, rename, reorder, or delete category buttons shown on the Shop Filter Bar."
             field: { label: "Category Name", name: "category", widget: "string" }
 
-          # 4. CROCHET PRODUCTS CATALOG (WITH MULTI-PHOTOS VIA CLOUDINARY)
+          # 5. CROCHET PRODUCTS CATALOG (WITH RATINGS & MULTI-PHOTOS)
           - label: "🛍️ Crochet Products Catalog"
             name: "products"
             widget: "list"
-            summary: "{{fields.name}} — ₹{{fields.price}} ({{fields.category}})"
+            summary: "{{fields.name}} — ₹{{fields.price}} ({{fields.category}}) ★{{fields.rating}}"
             fields:
               - { label: "Unique Product ID (e.g., prod-7)", name: "id", widget: "string" }
               - { label: "Product Name", name: "name", widget: "string" }
               - { label: "Category", name: "category", widget: "string" }
               - { label: "Price (₹)", name: "price", widget: "number", value_type: "int" }
+              - { label: "Average Star Rating (1.0 to 5.0)", name: "rating", widget: "number", value_type: "float", min: 1, max: 5, step: 0.1, default: 5.0, required: false }
+              - { label: "Number of Ratings / Reviews", name: "reviewCount", widget: "number", value_type: "int", min: 0, default: 5, required: false }
               - { label: "Badge (e.g., Ready to Ship, Bestseller)", name: "badge", widget: "string", required: false }
               - { label: "Show on Home Page Featured Section?", name: "featured", widget: "boolean", default: false }
               - { label: "In Stock?", name: "inStock", widget: "boolean", default: true }
@@ -87,7 +122,7 @@ collections:
                 field: { label: "Photo", name: "image", widget: "image" }
               - { label: "Basic Description (2-3 lines)", name: "description", widget: "text" }
 
-          # 5. CUSTOMER TESTIMONIALS
+          # 6. CUSTOMER TESTIMONIALS
           - label: "💖 Customer Testimonials (Home Page)"
             name: "testimonials"
             widget: "list"
@@ -96,7 +131,7 @@ collections:
               - { label: "Customer Name", name: "name", widget: "string" }
               - { label: "Review Text", name: "text", widget: "text" }
 
-          # 6. ABOUT & CROCHET CARE GUIDE PAGE
+          # 7. ABOUT & CROCHET CARE GUIDE PAGE
           - label: "🫧 About & Care Guide Page"
             name: "about"
             widget: "object"
@@ -116,7 +151,7 @@ collections:
                   - { label: "Care Tip Title", name: "title", widget: "string" }
                   - { label: "Care Tip Description", name: "text", widget: "text" }
 
-          # 7. FREQUENTLY ASKED QUESTIONS
+          # 8. FREQUENTLY ASKED QUESTIONS
           - label: "❓ Frequently Asked Questions (Contact Page)"
             name: "faqs"
             widget: "list"
