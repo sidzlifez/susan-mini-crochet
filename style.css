@@ -34,7 +34,7 @@ body {
   font-weight: 600;
 }
 
-/* Navbar */
+/* Navbar & Brand Logo */
 .navbar {
   background: var(--white);
   border-bottom: 1px solid var(--border-soft);
@@ -54,7 +54,16 @@ body {
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.brand-logo-img {
+  height: 42px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
 }
 
 .brand-logo span {
@@ -79,6 +88,32 @@ body {
 .nav-links a:hover,
 .nav-links a.active {
   color: var(--deep-pink);
+}
+
+.nav-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-btn {
+  background: var(--white);
+  border: 2px solid var(--border-soft);
+  color: var(--rose-dark);
+  padding: 8px 14px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.account-btn:hover {
+  border-color: var(--pastel-pink);
+  background: var(--bg-soft-pink);
 }
 
 .cart-btn {
@@ -242,7 +277,7 @@ body {
   border-color: var(--deep-pink);
 }
 
-/* Product Grid & Cards with Image Slider & Zoom */
+/* Product Grid & Cards with Image Slider, Zoom & Star Ratings */
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -397,8 +432,46 @@ body {
 
 .product-title {
   font-size: 1.15rem;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: var(--rose-dark);
+}
+
+/* Product Card Star Rating Bar */
+.product-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.stars-gold {
+  color: #F59E0B;
+  letter-spacing: 1px;
+  font-size: 0.95rem;
+}
+
+.rating-number {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.rate-product-btn {
+  margin-left: auto;
+  background: var(--bg-soft-pink);
+  border: 1px solid var(--border-soft);
+  color: var(--rose-dark);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rate-product-btn:hover {
+  background: var(--pastel-pink);
 }
 
 .product-desc {
@@ -442,6 +515,201 @@ body {
 .add-to-cart-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Custom Modals (Customer Login/Order Tracker & Rating Modal) */
+.custom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(74, 49, 56, 0.5);
+  z-index: 250;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.custom-modal-overlay.open {
+  display: flex;
+}
+
+.custom-modal-card {
+  background: var(--bg-cream);
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.custom-modal-header {
+  padding: 16px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.custom-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.customer-profile-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-soft-pink);
+  border: 1px solid var(--pastel-pink);
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.order-lookup-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.order-lookup-bar input {
+  flex-grow: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.customer-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.customer-order-card {
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+
+.customer-order-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.order-date-text {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.order-status-badge {
+  background: var(--bg-soft-pink);
+  color: var(--deep-pink);
+  border: 1px solid var(--pastel-pink);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.order-items-text {
+  font-size: 0.88rem;
+  color: var(--rose-dark);
+  margin-bottom: 10px;
+}
+
+.order-steps-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.order-step-pill {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: #F4ECEF;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.order-step-pill.done {
+  background: var(--deep-pink);
+  color: var(--white);
+}
+
+.order-tracking-note {
+  font-size: 0.82rem;
+  background: var(--bg-soft-pink);
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.customer-order-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-soft);
+  font-size: 0.86rem;
+}
+
+.empty-orders-box {
+  text-align: center;
+  background: var(--white);
+  border: 1px dashed var(--pastel-pink);
+  padding: 20px;
+  border-radius: 12px;
+  color: var(--text-muted);
+}
+
+/* Interactive Star Picker inside Rating Modal */
+.star-picker-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+
+.interactive-star-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #E2D5D8;
+  cursor: pointer;
+  transition: transform 0.15s, color 0.15s;
+}
+
+.interactive-star-btn.active {
+  color: #F59E0B;
+}
+
+.interactive-star-btn:hover {
+  transform: scale(1.15);
+}
+
+.mini-review-item {
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  font-size: 0.82rem;
 }
 
 /* Testimonials */
@@ -924,6 +1192,10 @@ body {
   .navbar {
     flex-wrap: wrap;
     gap: 12px;
+  }
+  .brand-logo-img {
+    height: 36px;
+    max-width: 120px;
   }
   .hero h1 {
     font-size: 1.9rem;
