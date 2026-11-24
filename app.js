@@ -18,15 +18,17 @@ async function initStore() {
     storeData = await response.json();
   } catch (err) {
     console.error('Error loading store.json data:', err);
-    return;
   }
 
   injectNavbarAccountButton();
-  applyStoreSettings();
-  renderCatalogAndFilters();
-  renderTestimonials();
-  renderAboutPage();
-  renderContactAndFaqPage();
+  if (storeData) {
+    applyStoreSettings();
+    renderCatalogAndFilters();
+    renderTestimonials();
+    renderAboutPage();
+    renderContactAndFaqPage();
+  }
+  renderOrderPlacedPage();
   updateCartUI();
   prefillCheckoutFromCustomer();
 }
@@ -168,7 +170,7 @@ function renderOrderCardHTML(order, currency) {
           <strong>Order #${order.orderId}</strong>
           <span class="order-date-text">${order.orderDate || ''}</span>
         </div>
-        <span class="order-status-badge">${order.status || 'Order Sent on WhatsApp'}</span>
+        <span class="order-status-badge">${order.status || 'Order Placed'}</span>
       </div>
       <p class="order-items-text">${order.itemsSummary || ''}</p>
       <div class="order-steps-row">${progressHTML}</div>
@@ -178,7 +180,7 @@ function renderOrderCardHTML(order, currency) {
           : ''
       }
       <div class="customer-order-bottom">
-        <span>Total: <strong>${currency}${order.totalAmount || 0}</strong> (${order.paymentStatus || 'WhatsApp Checkout'})</span>
+        <span>Total: <strong>${currency}${order.totalAmount || 0}</strong> (${order.paymentStatus || 'Checkout'})</span>
         ${
           order.trackingUrl
             ? `<a href="${order.trackingUrl}" target="_blank" rel="noopener" class="social-pill">Track Parcel ↗</a>`
@@ -217,7 +219,6 @@ function renderAccountModalContent(searchOrderIdQuery = '') {
   const customerPhone = normalizePhone(loggedInCustomer.phone);
   const adminOrders = Array.isArray(storeData?.orders) ? storeData.orders : [];
 
-  // Combine admin orders for this customer + local device orders (avoiding duplicate orderIds)
   const matchedAdminOrders = adminOrders.filter(
     o =>
       normalizePhone(o.phone) === customerPhone ||
@@ -229,7 +230,10 @@ function renderAccountModalContent(searchOrderIdQuery = '') {
   const adminOrderIds = new Set(matchedAdminOrders.map(o => String(o.orderId).toUpperCase()));
   const matchedLocalOrders = localCustomerOrders.filter(
     o =>
-      normalizePhone(o.phone) === customerPhone &&
+      (normalizePhone(o.phone) === customerPhone ||
+        (searchOrderIdQuery &&
+          o.orderId &&
+          o.orderId.toLowerCase() === searchOrderIdQuery.toLowerCase())) &&
       !adminOrderIds.has(String(o.orderId).toUpperCase())
   );
 
@@ -240,7 +244,7 @@ function renderAccountModalContent(searchOrderIdQuery = '') {
       ? allCustomerOrders.map(o => renderOrderCardHTML(o, currency)).join('')
       : `<div class="empty-orders-box">
           <p>No orders found for <strong>${loggedInCustomer.phone}</strong> yet 🧶</p>
-          <p style="font-size:0.82rem; margin-top:4px;">When you place an order on WhatsApp or look up an Order ID below, it will appear right here!</p>
+          <p style="font-size:0.82rem; margin-top:4px;">When you place an order or look up an Order ID below, it will appear right here!</p>
         </div>`;
 
   bodyEl.innerHTML = `
@@ -441,7 +445,15 @@ function submitProductRating(event) {
   }
 }
 
-/* 3. Store Settings, Catalog & Checkout Functions */
+/* 3. Store Settings, UPI Checkout Button & Catalog */
+function getUpiQrImageUrl() {
+  const customQr = storeData?.settings?.upiQrImage;
+  if (customQr && customQr.trim() !== '') {
+    return customQr;
+  }
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=susanminicrochet@upi';
+}
+
 function applyStoreSettings() {
   if (!storeData || !storeData.settings) return;
   const { announcement, storeName, logo, enableCOD, socialLinks, whatsappNumber } = storeData.settings;
@@ -503,11 +515,7 @@ function injectUpiQrContainer() {
   const paymentOptionsEl = document.querySelector('.payment-options');
   if (!paymentOptionsEl) return;
 
-  const customQr = storeData?.settings?.upiQrImage;
-  const qrImageSrc =
-    customQr && customQr.trim() !== ''
-      ? customQr
-      : 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=susanminicrochet@upi';
+  const qrImageSrc = getUpiQrImageUrl();
 
   let qrBox = document.getElementById('upi-qr-box');
   if (!qrBox) {
@@ -524,9 +532,23 @@ function injectUpiQrContainer() {
 
   qrBox.innerHTML = `
     <p><strong>Scan & Pay via GPay / PhonePe / Paytm</strong></p>
+    <p class="upi-amount-pill">Amount to Pay: <strong id="upi-payable-amount">₹0</strong></p>
     <img src="${qrImageSrc}" alt="UPI QR Code" id="dynamic-upi-qr" />
-    <p>Scan with any UPI app and share screenshot on WhatsApp after placing order.</p>
+    <p>Scan with any UPI app, then click the <strong>Pay via UPI & Place Order</strong> button below.</p>
   `;
+
+  // Inject separate dedicated UPI payment button inside .cart-footer
+  const cartFooter = document.querySelector('.cart-footer');
+  const waBtn = document.querySelector('.whatsapp-checkout-btn');
+  if (cartFooter && waBtn && !document.getElementById('upi-checkout-btn')) {
+    const upiBtn = document.createElement('button');
+    upiBtn.id = 'upi-checkout-btn';
+    upiBtn.type = 'button';
+    upiBtn.className = 'upi-checkout-btn';
+    upiBtn.textContent = '💜 Pay via UPI & Place Order';
+    upiBtn.onclick = checkoutUpiPayment;
+    cartFooter.insertBefore(upiBtn, waBtn.nextSibling);
+  }
 
   handlePaymentMethodChange();
 }
@@ -534,12 +556,17 @@ function injectUpiQrContainer() {
 function handlePaymentMethodChange() {
   const selected = document.querySelector('input[name="payment-method"]:checked');
   const qrBox = document.getElementById('upi-qr-box');
-  if (!qrBox) return;
+  const upiBtn = document.getElementById('upi-checkout-btn');
+  const waBtn = document.querySelector('.whatsapp-checkout-btn');
 
-  if (selected && selected.value.includes('UPI')) {
-    qrBox.classList.add('visible');
-  } else {
-    qrBox.classList.remove('visible');
+  const isUpi = Boolean(selected && selected.value.toUpperCase().includes('UPI'));
+
+  if (qrBox) {
+    qrBox.classList.toggle('visible', isUpi);
+  }
+  if (upiBtn && waBtn) {
+    upiBtn.style.display = isUpi ? 'block' : 'none';
+    waBtn.style.display = isUpi ? 'none' : 'block';
   }
 }
 
@@ -825,6 +852,7 @@ function renderContactAndFaqPage() {
   }
 }
 
+/* 4. Cart, Promo & Order Placement Engine */
 function saveCart() {
   localStorage.setItem('susanCrochetCart', JSON.stringify(cart));
   localStorage.setItem('susanCrochetPromo', JSON.stringify(appliedPromo));
@@ -871,6 +899,7 @@ function toggleCart(forceOpen) {
     overlay.classList.toggle('open');
   }
   prefillCheckoutFromCustomer();
+  handlePaymentMethodChange();
 }
 
 function applyPromoCode() {
@@ -979,6 +1008,8 @@ function updateCartUI() {
   const subEl = document.getElementById('cart-subtotal');
   const shipEl = document.getElementById('cart-shipping');
   const totEl = document.getElementById('cart-total');
+  const upiAmountEl = document.getElementById('upi-payable-amount');
+  const upiBtn = document.getElementById('upi-checkout-btn');
 
   let subtotalDisplay = `${currency}${subtotal}`;
   if (discountAmount > 0) {
@@ -988,55 +1019,51 @@ function updateCartUI() {
   if (subEl) subEl.innerHTML = subtotalDisplay;
   if (shipEl) shipEl.textContent = shipping === 0 ? 'FREE' : `${currency}${shipping}`;
   if (totEl) totEl.textContent = `${currency}${total}`;
+  if (upiAmountEl) upiAmountEl.textContent = `${currency}${total}`;
+  if (upiBtn) {
+    upiBtn.textContent =
+      total > 0 ? `💜 Pay ${currency}${total} via UPI & Place Order` : '💜 Pay via UPI & Place Order';
+  }
 }
 
-function checkoutWhatsApp(event) {
-  event.preventDefault();
+function finalizeAndSaveOrder(checkoutMode) {
   if (cart.length === 0) {
     alert('Please add at least one crochet item to your cart first!');
-    return;
+    return null;
   }
 
-  const name = document.getElementById('cust-name').value.trim();
-  const phone = document.getElementById('cust-phone').value.trim();
-  const address = document.getElementById('cust-address').value.trim();
+  const name = document.getElementById('cust-name')?.value.trim() || '';
+  const phone = document.getElementById('cust-phone')?.value.trim() || '';
+  const address = document.getElementById('cust-address')?.value.trim() || '';
   const paymentEl = document.querySelector('input[name="payment-method"]:checked');
-  const paymentMethod = paymentEl ? paymentEl.value : 'UPI';
+  const paymentMethod = paymentEl ? paymentEl.value : checkoutMode === 'UPI' ? 'UPI (GPay / PhonePe / Paytm)' : 'COD';
 
   if (!name || !phone || !address) {
     alert('Please fill in your Name, Phone Number, and Full Delivery Address.');
-    return;
+    return null;
   }
 
   const currency = storeData?.settings?.currency || '₹';
   const whatsappNumber = storeData?.settings?.whatsappNumber || '919876543210';
+  const storeName = storeData?.settings?.storeName || 'Susan-mini-crochet';
   const { subtotal, discountAmount, shipping, total } = getCartTotals();
 
-  // Generate unique Order ID & save to customer login profile automatically
   const orderId = 'SMC-' + Math.floor(1000 + Math.random() * 9000);
   const cleanPhone = normalizePhone(phone);
-  const itemsSummaryText = cart.map(i => `${i.name} (x${i.qty})`).join(', ');
-
-  loggedInCustomer = { name, phone: cleanPhone, address };
-  localStorage.setItem('susanCrochetCustomer', JSON.stringify(loggedInCustomer));
-  updateAccountButtonText();
-
-  localCustomerOrders.unshift({
-    orderId,
-    customerName: name,
-    phone: cleanPhone,
-    orderDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    itemsSummary: itemsSummaryText,
-    totalAmount: total,
-    paymentStatus: paymentMethod,
-    status: 'Order Confirmed'
+  const itemsCopy = cart.map(i => ({ ...i }));
+  const itemsSummaryText = itemsCopy.map(i => `${i.name} (x${i.qty})`).join(', ');
+  const orderDate = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   });
-  localStorage.setItem('susanCrochetLocalOrders', JSON.stringify(localCustomerOrders));
 
-  let orderLines = `*🧶 New Order #${orderId} - ${storeData?.settings?.storeName || 'Susan-mini-crochet'}*\n\n`;
+  const isUpiOrder = checkoutMode === 'UPI' || paymentMethod.toUpperCase().includes('UPI');
+
+  let orderLines = `*🧶 New Order #${orderId} - ${storeName}*\n\n`;
   orderLines += `*Order ID:* #${orderId}\n`;
   orderLines += `*Items Ordered:*\n`;
-  cart.forEach((item, index) => {
+  itemsCopy.forEach((item, index) => {
     orderLines += `${index + 1}. ${item.name} (x${item.qty}) - ${currency}${item.price * item.qty}\n`;
   });
 
@@ -1046,14 +1073,196 @@ function checkoutWhatsApp(event) {
   }
   orderLines += `\n*Shipping:* ${shipping === 0 ? 'FREE' : currency + shipping}`;
   orderLines += `\n*Total Payable:* *${currency}${total}*\n`;
-  orderLines += `\n*Payment Mode:* ${paymentMethod}\n`;
-  orderLines += `\n*Customer Details:*`;
+  orderLines += `\n*Payment Mode:* ${paymentMethod}`;
+  if (isUpiOrder) {
+    orderLines += `\n*(Sharing UPI payment screenshot below)*`;
+  }
+  orderLines += `\n\n*Customer Details:*`;
   orderLines += `\n👤 Name: ${name}`;
   orderLines += `\n📞 Phone: ${cleanPhone}`;
   orderLines += `\n📍 Address: ${address}`;
 
-  const encodedText = encodeURIComponent(orderLines);
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedText}`, '_blank');
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderLines)}`;
+
+  const orderRecord = {
+    orderId,
+    customerName: name,
+    phone: cleanPhone,
+    address,
+    orderDate,
+    items: itemsCopy,
+    itemsSummary: itemsSummaryText,
+    subtotal,
+    discountAmount,
+    promoCode: appliedPromo ? appliedPromo.code : null,
+    shipping,
+    totalAmount: total,
+    currency,
+    paymentMethod,
+    paymentStatus: isUpiOrder ? 'UPI Payment Selected' : paymentMethod,
+    isUpi: isUpiOrder,
+    status: 'Order Confirmed',
+    whatsappUrl
+  };
+
+  // Update Customer Profile & Order History
+  loggedInCustomer = { name, phone: cleanPhone, address };
+  localStorage.setItem('susanCrochetCustomer', JSON.stringify(loggedInCustomer));
+  updateAccountButtonText();
+
+  localCustomerOrders.unshift(orderRecord);
+  localStorage.setItem('susanCrochetLocalOrders', JSON.stringify(localCustomerOrders));
+  localStorage.setItem('susanCrochetLastOrder', JSON.stringify(orderRecord));
+
+  // Clear Cart & Promo Completely and Refresh UI
+  cart = [];
+  appliedPromo = null;
+  localStorage.removeItem('susanCrochetCart');
+  localStorage.removeItem('susanCrochetPromo');
+  updateCartUI();
+  toggleCart(false);
+
+  return orderRecord;
+}
+
+function checkoutUpiPayment() {
+  const order = finalizeAndSaveOrder('UPI');
+  if (!order) return;
+  window.location.href = 'order-placed.html';
+}
+
+function checkoutWhatsApp(event) {
+  if (event) event.preventDefault();
+
+  const paymentEl = document.querySelector('input[name="payment-method"]:checked');
+  if (paymentEl && paymentEl.value.toUpperCase().includes('UPI')) {
+    checkoutUpiPayment();
+    return;
+  }
+
+  const order = finalizeAndSaveOrder('WHATSAPP');
+  if (!order) return;
+
+  window.open(order.whatsappUrl, '_blank');
+  window.location.href = 'order-placed.html';
+}
+
+/* 5. Order Placed Confirmation Page Renderer */
+function renderOrderPlacedPage() {
+  const container = document.getElementById('order-placed-container');
+  if (!container) return;
+
+  const lastOrder = JSON.parse(localStorage.getItem('susanCrochetLastOrder'));
+  if (!lastOrder) {
+    container.innerHTML = `
+      <div class="order-placed-card" style="text-align: center;">
+        <div class="order-success-icon">🧶</div>
+        <h2>No Recent Order Found</h2>
+        <p style="color: var(--text-muted); margin: 10px 0 22px;">
+          Browse our handmade crochet catalog to place a new order, or log in to track an existing order.
+        </p>
+        <div class="order-placed-actions">
+          <a href="shop.html" class="btn-primary">🛍️ Browse Shop</a>
+          <button type="button" class="social-pill" onclick="openAccountModal()">📦 Track My Orders</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const currency = lastOrder.currency || storeData?.settings?.currency || '₹';
+  const qrImageSrc = getUpiQrImageUrl();
+
+  const itemsHTML = Array.isArray(lastOrder.items) && lastOrder.items.length > 0
+    ? lastOrder.items
+        .map(
+          item => `
+          <div class="receipt-item-row">
+            <span>${item.name} <strong>× ${item.qty}</strong></span>
+            <span>${currency}${Number(item.price) * Number(item.qty)}</span>
+          </div>
+        `
+        )
+        .join('')
+    : `<p>${lastOrder.itemsSummary || ''}</p>`;
+
+  const upiBlockHTML = lastOrder.isUpi
+    ? `
+      <div class="order-placed-upi-box">
+        <h3>💜 Complete Your UPI Payment</h3>
+        <p>Scan the QR code below using <strong>GPay, PhonePe, or Paytm</strong> to pay <strong>${currency}${lastOrder.totalAmount}</strong> (if you haven't paid already), then send your payment screenshot on WhatsApp so we can start packing your crochet order!</p>
+        <img src="${qrImageSrc}" alt="UPI QR Code" />
+        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:360px; margin-top:8px;">
+          💬 Send Payment Screenshot on WhatsApp
+        </a>
+      </div>
+    `
+    : `
+      <div class="order-placed-wa-box">
+        <p>Your order has been recorded! Tap the button below if WhatsApp didn't open automatically so we receive your order confirmation right away.</p>
+        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:360px; margin-top:10px;">
+          💬 Send Order Confirmation on WhatsApp
+        </a>
+      </div>
+    `;
+
+  container.innerHTML = `
+    <div class="order-placed-card">
+      <div class="order-success-banner">
+        <div class="order-success-icon">✅</div>
+        <h1>Order Placed Successfully!</h1>
+        <p>Thank you, <strong>${lastOrder.customerName}</strong>! Your handmade crochet order has been received.</p>
+        <div class="order-id-pill">Order ID: #${lastOrder.orderId} &nbsp;•&nbsp; ${lastOrder.orderDate}</div>
+      </div>
+
+      ${upiBlockHTML}
+
+      <div class="order-receipt-grid">
+        <div class="order-receipt-section">
+          <h3>🛍️ Order Summary</h3>
+          <div class="order-receipt-items">
+            ${itemsHTML}
+          </div>
+          <div class="order-receipt-totals">
+            <div class="cart-summary-row">
+              <span>Subtotal</span>
+              <span>${currency}${lastOrder.subtotal}</span>
+            </div>
+            ${
+              lastOrder.discountAmount > 0
+                ? `<div class="cart-summary-row" style="color: var(--deep-pink); font-weight: 600;">
+                    <span>Discount (${lastOrder.promoCode || 'Promo'})</span>
+                    <span>-${currency}${lastOrder.discountAmount}</span>
+                  </div>`
+                : ''
+            }
+            <div class="cart-summary-row">
+              <span>Shipping</span>
+              <span>${lastOrder.shipping === 0 ? 'FREE' : currency + lastOrder.shipping}</span>
+            </div>
+            <div class="cart-total-row" style="margin-bottom: 0;">
+              <span>Total Payable</span>
+              <span>${currency}${lastOrder.totalAmount}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-receipt-section">
+          <h3>📦 Delivery & Payment Details</h3>
+          <p><strong>Name:</strong> ${lastOrder.customerName}</p>
+          <p><strong>Phone:</strong> +91 ${lastOrder.phone}</p>
+          <p><strong>Address:</strong> ${lastOrder.address}</p>
+          <p><strong>Payment Method:</strong> ${lastOrder.paymentMethod}</p>
+          <p><strong>Current Status:</strong> <span class="order-status-badge">${lastOrder.status}</span></p>
+        </div>
+      </div>
+
+      <div class="order-placed-actions">
+        <button type="button" class="btn-primary" onclick="openAccountModal()">📦 Track My Order</button>
+        <a href="shop.html" class="social-pill">🛍️ Continue Shopping</a>
+      </div>
+    </div>
+  `;
 }
 
 document.addEventListener('DOMContentLoaded', initStore);
