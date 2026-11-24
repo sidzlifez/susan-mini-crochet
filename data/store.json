@@ -7,6 +7,7 @@
       "facebook": "https://facebook.com/suzane.thapa.98",
       "youtube": "https://youtube.com/@SiDz_LiFeZ"
     },
+    "upiQrImage": "https://res.cloudinary.com/aielb7zs/image/upload/c_limit,f_auto,q_auto,w_800/v1795496450/gpay_code.png",
     "storeName": "Susan-mini-crochet",
     "tagline": "Handmade with love, one stitch at a time",
     "currency": "₹",
@@ -16,6 +17,19 @@
     "whatsappNumber": "919856701460",
     "email": "sidzlifez@gmail.com"
   },
+  "orders": [
+    {
+      "itemsSummary": "1. Mini cutie Mushroom (x1) - Rs.149\n2. Tonari noTotoro (x1) - Rs.149\n3. Penguin Keychain (x1) - Rs.149",
+      "orderId": "SMC-4832",
+      "trackingNote": "Expected shipping in 3 -4 days",
+      "customerName": "Lalit Thapa",
+      "phone": "9856701460",
+      "status": "Order Confirmed",
+      "paymentStatus": "COD",
+      "orderDate": "11 Nov 2026",
+      "totalAmount": 462
+    }
+  ],
   "promoCodes": [
     {
       "code": "SUSAN10",
@@ -157,19 +171,6 @@
     {
       "question": "How much is shipping and how long does delivery take?",
       "answer": "Standard shipping is ₹60 across India, and FREE on orders above ₹999. Delivery usually takes 3-12 business days depending on your PIN code."
-    }
-  ],
-  "orders": [
-    {
-      "itemsSummary": "1. Mini cutie Mushroom (x1) - Rs.149\n2. Tonari noTotoro (x1) - Rs.149\n3. Penguin Keychain (x1) - Rs.149",
-      "orderId": "SMC-4832",
-      "trackingNote": "Expected shipping in 3 -4 days",
-      "customerName": "Lalit Thapa",
-      "phone": "9856701460",
-      "status": "Order Confirmed",
-      "paymentStatus": "COD",
-      "orderDate": "11 Nov 2026",
-      "totalAmount": 462
     }
   ]
 }
