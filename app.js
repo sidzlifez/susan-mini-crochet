@@ -1,36 +1,146 @@
+function safeReadStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (err) {
+    console.warn(`Resetting corrupted storage key "${key}":`, err);
+    localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
 let storeData = null;
-let cart = JSON.parse(localStorage.getItem('susanCrochetCart')) || [];
+let cart = safeReadStorage('susanCrochetCart', []);
+if (!Array.isArray(cart)) cart = [];
 let activeCategory = 'All';
-let appliedPromo = JSON.parse(localStorage.getItem('susanCrochetPromo')) || null;
+let appliedPromo = safeReadStorage('susanCrochetPromo', null);
 let productActiveImageIndex = {};
 
 // Customer Login, Local Order History & Product Ratings State
-let loggedInCustomer = JSON.parse(localStorage.getItem('susanCrochetCustomer')) || null;
-let localCustomerOrders = JSON.parse(localStorage.getItem('susanCrochetLocalOrders')) || [];
-let localProductRatings = JSON.parse(localStorage.getItem('susanCrochetRatings')) || {};
+let loggedInCustomer = safeReadStorage('susanCrochetCustomer', null);
+let localCustomerOrders = safeReadStorage('susanCrochetLocalOrders', []);
+if (!Array.isArray(localCustomerOrders)) localCustomerOrders = [];
+let localProductRatings = safeReadStorage('susanCrochetRatings', {});
+if (!localProductRatings || typeof localProductRatings !== 'object') localProductRatings = {};
 let currentRatingProductId = null;
 let selectedStarValue = 5;
 
+function escapeForAttr(str) {
+  return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function normalizeStoreData(raw) {
+  const data = raw && typeof raw === 'object' ? raw : {};
+  data.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
+  data.promoCodes = Array.isArray(data.promoCodes) ? data.promoCodes.filter(Boolean) : [];
+  data.orders = Array.isArray(data.orders) ? data.orders.filter(Boolean) : [];
+  data.testimonials = Array.isArray(data.testimonials) ? data.testimonials.filter(Boolean) : [];
+  data.faqs = Array.isArray(data.faqs) ? data.faqs.filter(Boolean) : [];
+
+  data.categories = (Array.isArray(data.categories) ? data.categories : [])
+    .map(c => (typeof c === 'string' ? c.trim() : (c && c.category ? String(c.category).trim() : '')))
+    .filter(Boolean);
+
+  data.products = (Array.isArray(data.products) ? data.products : [])
+    .filter(Boolean)
+    .map((p, idx) => ({
+      ...p,
+      id: p.id && String(p.id).trim() ? String(p.id).trim() : `prod-auto-${idx + 1}`,
+      name: p.name ? String(p.name) : 'Handmade Crochet Item',
+      category: p.category ? String(p.category) : 'Crochet',
+      price: Number(p.price) || 0,
+      inStock: p.inStock !== false,
+      description: p.description ? String(p.description) : ''
+    }));
+
+  return data;
+}
+
+async function fetchStoreJson() {
+  const cacheBust = `?v=${Date.now()}`;
+  const urls = [`data/store.json${cacheBust}`, `/data/store.json${cacheBust}`];
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
+        lastError = new Error(`HTTP ${response.status} loading ${url}`);
+        continue;
+      }
+      const parsed = await response.json();
+      return normalizeStoreData(parsed);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('Could not load data/store.json');
+}
+
+function showCatalogLoadError(err) {
+  const targetGrid = document.getElementById('shop-grid') || document.getElementById('featured-grid');
+  if (!targetGrid) return;
+
+  if (window.location.protocol === 'file:') {
+    targetGrid.innerHTML = `
+      <div class="catalog-alert-box">
+        <strong>Previewing from a local folder?</strong>
+        <p>Browsers block reading <code>data/store.json</code> when opening HTML files directly (<code>file://</code>). Push your files to GitHub and open your live Netlify URL to see all your products.</p>
+      </div>
+    `;
+  } else {
+    targetGrid.innerHTML = `
+      <div class="catalog-alert-box">
+        <strong>Could not load products from <code>data/store.json</code></strong>
+        <p>Please check that <code>data/store.json</code> exists in your GitHub repository and has valid JSON formatting. (${err ? err.message : 'Load error'})</p>
+      </div>
+    `;
+  }
+}
+
 async function initStore() {
   try {
-    const response = await fetch('data/store.json');
-    if (!response.ok) throw new Error('HTTP error ' + response.status);
-    storeData = await response.json();
-  } catch (err) {
-    console.error('Error loading store.json data:', err);
+    injectNavbarAccountButton();
+  } catch (e) {
+    console.error('Navbar account button error:', e);
   }
 
-  injectNavbarAccountButton();
-  if (storeData) {
-    applyStoreSettings();
-    renderCatalogAndFilters();
-    renderTestimonials();
-    renderAboutPage();
-    renderContactAndFaqPage();
+  try {
+    storeData = await fetchStoreJson();
+  } catch (err) {
+    console.error('Error loading store.json data:', err);
+    showCatalogLoadError(err);
   }
-  renderOrderPlacedPage();
-  updateCartUI();
-  prefillCheckoutFromCustomer();
+
+  if (storeData) {
+    const runners = [
+      applyStoreSettings,
+      renderCatalogAndFilters,
+      renderTestimonials,
+      renderAboutPage,
+      renderContactAndFaqPage
+    ];
+    runners.forEach(fn => {
+      try {
+        fn();
+      } catch (e) {
+        console.error(`Error in ${fn.name}:`, e);
+      }
+    });
+  }
+
+  try {
+    renderOrderPlacedPage();
+  } catch (e) {
+    console.error('Order placed page render error:', e);
+  }
+
+  try {
+    updateCartUI();
+    prefillCheckoutFromCustomer();
+  } catch (e) {
+    console.error('Cart UI init error:', e);
+  }
 }
 
 function normalizePhone(phoneStr) {
@@ -286,7 +396,7 @@ function getProductRatingStats(product) {
 
   const totalCount = baseCount + userReviews.length;
   if (totalCount === 0) {
-    return { avg: '5.0', count: 0, stars: '★★★★★' };
+    return { avg: '5.0', count: 0, stars: '★★★★★', userReviews: [] };
   }
 
   const userSum = userReviews.reduce((sum, r) => sum + Number(r.stars || 5), 0);
@@ -445,13 +555,54 @@ function submitProductRating(event) {
   }
 }
 
-/* 3. Store Settings, UPI Checkout Button & Catalog */
-function getUpiQrImageUrl() {
-  const customQr = storeData?.settings?.upiQrImage;
-  if (customQr && customQr.trim() !== '') {
-    return customQr;
+/* 3. UPI Helpers, Store Settings & Catalog */
+function getStoreUpiId(fallbackUpiId) {
+  const configured = storeData?.settings?.upiId;
+  if (configured && String(configured).trim() !== '') {
+    return String(configured).trim();
   }
-  return 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=susanminicrochet@upi';
+  if (fallbackUpiId && String(fallbackUpiId).trim() !== '') {
+    return String(fallbackUpiId).trim();
+  }
+  return 'susanminicrochet@upi';
+}
+
+function buildUpiDeepLink(amount, orderId, fallbackUpiId) {
+  const upiId = encodeURIComponent(getStoreUpiId(fallbackUpiId)).replace(/%40/g, '@');
+  const payeeName = encodeURIComponent(storeData?.settings?.storeName || 'Susan-mini-crochet');
+  const note = encodeURIComponent(orderId ? `Order ${orderId}` : 'Crochet Order');
+  const numAmount = Number(amount);
+  const amtPart = numAmount > 0 ? `&am=${numAmount.toFixed(2)}` : '';
+  return `upi://pay?pa=${upiId}&pn=${payeeName}${amtPart}&cu=INR&tn=${note}`;
+}
+
+function getUpiQrImageUrl(amount, orderId, fallbackUpiId) {
+  const customQr = storeData?.settings?.upiQrImage;
+  if (customQr && String(customQr).trim() !== '') {
+    return String(customQr).trim();
+  }
+  const deepLink = buildUpiDeepLink(amount, orderId, fallbackUpiId);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(deepLink)}`;
+}
+
+function copyUpiIdToClipboard(upiId, btnEl) {
+  const textToCopy = upiId || getStoreUpiId();
+  const markCopied = () => {
+    if (!btnEl) return;
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✅ Copied!';
+    setTimeout(() => {
+      btnEl.textContent = orig;
+    }, 2000);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(markCopied).catch(() => {
+      prompt('Copy UPI ID:', textToCopy);
+    });
+  } else {
+    prompt('Copy UPI ID:', textToCopy);
+  }
 }
 
 function applyStoreSettings() {
@@ -465,7 +616,7 @@ function applyStoreSettings() {
 
   const brandLogoLinks = document.querySelectorAll('.brand-logo');
   brandLogoLinks.forEach(link => {
-    if (logo && logo.trim() !== '') {
+    if (logo && String(logo).trim() !== '') {
       link.innerHTML = `<img src="${logo}" alt="${storeName || 'Susan-mini-crochet'} Logo" class="brand-logo-img" /> <span class="store-name-text">${storeName || 'Susan-mini-crochet'}</span>`;
     } else {
       const nameSpan = link.querySelector('.store-name-text');
@@ -475,7 +626,7 @@ function applyStoreSettings() {
     }
   });
 
-  if (logo && logo.trim() !== '') {
+  if (logo && String(logo).trim() !== '') {
     let favicon = document.querySelector("link[rel~='icon']");
     if (!favicon) {
       favicon = document.createElement('link');
@@ -515,7 +666,8 @@ function injectUpiQrContainer() {
   const paymentOptionsEl = document.querySelector('.payment-options');
   if (!paymentOptionsEl) return;
 
-  const qrImageSrc = getUpiQrImageUrl();
+  const { total } = getCartTotals();
+  const qrImageSrc = getUpiQrImageUrl(total);
 
   let qrBox = document.getElementById('upi-qr-box');
   if (!qrBox) {
@@ -532,12 +684,11 @@ function injectUpiQrContainer() {
 
   qrBox.innerHTML = `
     <p><strong>Scan & Pay via GPay / PhonePe / Paytm</strong></p>
-    <p class="upi-amount-pill">Amount to Pay: <strong id="upi-payable-amount">₹0</strong></p>
+    <p class="upi-amount-pill">Amount to Pay: <strong id="upi-payable-amount">₹${total}</strong></p>
     <img src="${qrImageSrc}" alt="UPI QR Code" id="dynamic-upi-qr" />
-    <p>Scan with any UPI app, then click the <strong>Pay via UPI & Place Order</strong> button below.</p>
+    <p>Click <strong>Pay via UPI & Place Order</strong> below to get your 1-Tap GPay/PhonePe button & Order Receipt.</p>
   `;
 
-  // Inject separate dedicated UPI payment button inside .cart-footer
   const cartFooter = document.querySelector('.cart-footer');
   const waBtn = document.querySelector('.whatsapp-checkout-btn');
   if (cartFooter && waBtn && !document.getElementById('upi-checkout-btn')) {
@@ -590,7 +741,10 @@ function renderFloatingWhatsApp(whatsappNumber, storeName) {
 
 function getProductImages(product) {
   if (Array.isArray(product.images) && product.images.length > 0) {
-    return product.images;
+    const cleaned = product.images
+      .map(img => (typeof img === 'string' ? img : (img && img.image ? img.image : '')))
+      .filter(Boolean);
+    if (cleaned.length > 0) return cleaned;
   }
   return product.image ? [product.image] : ['https://via.placeholder.com/600'];
 }
@@ -603,6 +757,7 @@ function createProductCardHTML(product) {
   const btnText = product.inStock ? 'Add to Cart' : 'Out of Stock';
   const disabledAttr = product.inStock ? '' : 'disabled';
 
+  const safeId = escapeForAttr(product.id);
   const images = getProductImages(product);
   const currentImgIdx = productActiveImageIndex[product.id] || 0;
   const activeImage = images[currentImgIdx] || images[0];
@@ -610,8 +765,8 @@ function createProductCardHTML(product) {
   let sliderControls = '';
   if (images.length > 1) {
     sliderControls = `
-      <button class="slider-btn prev" onclick="changeProductImage('${product.id}', -1, ${images.length})">‹</button>
-      <button class="slider-btn next" onclick="changeProductImage('${product.id}', 1, ${images.length})">›</button>
+      <button class="slider-btn prev" onclick="changeProductImage('${safeId}', -1, ${images.length})">‹</button>
+      <button class="slider-btn next" onclick="changeProductImage('${safeId}', 1, ${images.length})">›</button>
     `;
   }
 
@@ -623,7 +778,7 @@ function createProductCardHTML(product) {
         <img id="card-img-${product.id}" src="${activeImage}" alt="${product.name}" loading="lazy" />
         ${badgeHTML}
         ${sliderControls}
-        <button class="zoom-btn" onclick="openProductZoom('${product.id}')">🔍 Zoom</button>
+        <button class="zoom-btn" onclick="openProductZoom('${safeId}')">🔍 Zoom</button>
       </div>
       <div class="product-body">
         <span class="product-category">${product.category}</span>
@@ -631,12 +786,12 @@ function createProductCardHTML(product) {
         <div class="product-rating-row">
           <span class="stars-gold" title="Rated ${ratingStats.avg} out of 5">${ratingStats.stars}</span>
           <span class="rating-number">${ratingStats.avg} (${ratingStats.count})</span>
-          <button type="button" class="rate-product-btn" onclick="openRatingModal('${product.id}')">⭐ Rate</button>
+          <button type="button" class="rate-product-btn" onclick="openRatingModal('${safeId}')">⭐ Rate</button>
         </div>
         <p class="product-desc">${product.description || ''}</p>
         <div class="product-footer">
           <span class="product-price">${currency}${product.price}</span>
-          <button class="add-to-cart-btn" ${disabledAttr} onclick="addToCart('${product.id}')">
+          <button class="add-to-cart-btn" ${disabledAttr} onclick="addToCart('${safeId}')">
             ${btnText}
           </button>
         </div>
@@ -700,14 +855,14 @@ function renderCatalogAndFilters() {
   if (!targetGrid || !storeData) return;
 
   const configuredCategories = storeData.categories || [];
-  const productCategories = storeData.products.map(p => p.category).filter(Boolean);
+  const productCategories = (storeData.products || []).map(p => p.category).filter(Boolean);
   const allCategories = ['All', ...new Set([...configuredCategories, ...productCategories])];
 
   if (filterBar) {
     filterBar.innerHTML = allCategories
       .map(
         cat => `
-        <button class="filter-btn ${cat === activeCategory ? 'active' : ''}" onclick="setCategory('${cat.replace(/'/g, "\\'")}')">
+        <button class="filter-btn ${cat === activeCategory ? 'active' : ''}" onclick="setCategory('${escapeForAttr(cat)}')">
           ${cat}
         </button>
       `
@@ -732,12 +887,15 @@ function filterProducts() {
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
   const sortBy = sortSelect ? sortSelect.value : 'default';
 
-  let filtered = storeData.products.filter(product => {
+  const productsList = Array.isArray(storeData.products) ? storeData.products : [];
+
+  let filtered = productsList.filter(product => {
+    const pName = (product.name || '').toLowerCase();
+    const pDesc = (product.description || '').toLowerCase();
+    const pCat = (product.category || '').toLowerCase();
+
     const matchesCat = activeCategory === 'All' || product.category === activeCategory;
-    const matchesQuery =
-      product.name.toLowerCase().includes(query) ||
-      (product.description && product.description.toLowerCase().includes(query)) ||
-      (product.category && product.category.toLowerCase().includes(query));
+    const matchesQuery = pName.includes(query) || pDesc.includes(query) || pCat.includes(query);
     return matchesCat && matchesQuery;
   });
 
@@ -746,7 +904,7 @@ function filterProducts() {
   } else if (sortBy === 'price-desc') {
     filtered.sort((a, b) => Number(b.price) - Number(a.price));
   } else if (sortBy === 'name-asc') {
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
+    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } else {
     filtered.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
   }
@@ -860,6 +1018,7 @@ function saveCart() {
 }
 
 function addToCart(productId) {
+  if (!storeData || !Array.isArray(storeData.products)) return;
   const product = storeData.products.find(p => p.id === productId);
   if (!product) return;
 
@@ -976,9 +1135,9 @@ function updateCartUI() {
             <span>${currency}${item.price} × ${item.qty} = <strong>${currency}${item.price * item.qty}</strong></span>
           </div>
           <div class="qty-controls">
-            <button class="qty-btn" onclick="changeQty('${item.id}', -1)">-</button>
+            <button class="qty-btn" onclick="changeQty('${escapeForAttr(item.id)}', -1)">-</button>
             <span>${item.qty}</span>
-            <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+            <button class="qty-btn" onclick="changeQty('${escapeForAttr(item.id)}', 1)">+</button>
           </div>
         </div>
       `
@@ -1010,6 +1169,7 @@ function updateCartUI() {
   const totEl = document.getElementById('cart-total');
   const upiAmountEl = document.getElementById('upi-payable-amount');
   const upiBtn = document.getElementById('upi-checkout-btn');
+  const qrImgEl = document.getElementById('dynamic-upi-qr');
 
   let subtotalDisplay = `${currency}${subtotal}`;
   if (discountAmount > 0) {
@@ -1023,6 +1183,9 @@ function updateCartUI() {
   if (upiBtn) {
     upiBtn.textContent =
       total > 0 ? `💜 Pay ${currency}${total} via UPI & Place Order` : '💜 Pay via UPI & Place Order';
+  }
+  if (qrImgEl && (!storeData?.settings?.upiQrImage || storeData.settings.upiQrImage.trim() === '')) {
+    qrImgEl.src = getUpiQrImageUrl(total);
   }
 }
 
@@ -1059,6 +1222,7 @@ function finalizeAndSaveOrder(checkoutMode) {
   });
 
   const isUpiOrder = checkoutMode === 'UPI' || paymentMethod.toUpperCase().includes('UPI');
+  const upiIdUsed = getStoreUpiId();
 
   let orderLines = `*🧶 New Order #${orderId} - ${storeName}*\n\n`;
   orderLines += `*Order ID:* #${orderId}\n`;
@@ -1101,11 +1265,11 @@ function finalizeAndSaveOrder(checkoutMode) {
     paymentMethod,
     paymentStatus: isUpiOrder ? 'UPI Payment Selected' : paymentMethod,
     isUpi: isUpiOrder,
+    upiId: upiIdUsed,
     status: 'Order Confirmed',
     whatsappUrl
   };
 
-  // Update Customer Profile & Order History
   loggedInCustomer = { name, phone: cleanPhone, address };
   localStorage.setItem('susanCrochetCustomer', JSON.stringify(loggedInCustomer));
   updateAccountButtonText();
@@ -1147,12 +1311,12 @@ function checkoutWhatsApp(event) {
   window.location.href = 'order-placed.html';
 }
 
-/* 5. Order Placed Confirmation Page Renderer */
+/* 5. Order Placed Confirmation Page Renderer (with 1-Tap UPI Pay Button) */
 function renderOrderPlacedPage() {
   const container = document.getElementById('order-placed-container');
   if (!container) return;
 
-  const lastOrder = JSON.parse(localStorage.getItem('susanCrochetLastOrder'));
+  const lastOrder = safeReadStorage('susanCrochetLastOrder', null);
   if (!lastOrder) {
     container.innerHTML = `
       <div class="order-placed-card" style="text-align: center;">
@@ -1171,28 +1335,43 @@ function renderOrderPlacedPage() {
   }
 
   const currency = lastOrder.currency || storeData?.settings?.currency || '₹';
-  const qrImageSrc = getUpiQrImageUrl();
+  const activeUpiId = getStoreUpiId(lastOrder.upiId);
+  const upiDeepLink = buildUpiDeepLink(lastOrder.totalAmount, lastOrder.orderId, lastOrder.upiId);
+  const qrImageSrc = getUpiQrImageUrl(lastOrder.totalAmount, lastOrder.orderId, lastOrder.upiId);
 
-  const itemsHTML = Array.isArray(lastOrder.items) && lastOrder.items.length > 0
-    ? lastOrder.items
-        .map(
-          item => `
+  const itemsHTML =
+    Array.isArray(lastOrder.items) && lastOrder.items.length > 0
+      ? lastOrder.items
+          .map(
+            item => `
           <div class="receipt-item-row">
             <span>${item.name} <strong>× ${item.qty}</strong></span>
             <span>${currency}${Number(item.price) * Number(item.qty)}</span>
           </div>
         `
-        )
-        .join('')
-    : `<p>${lastOrder.itemsSummary || ''}</p>`;
+          )
+          .join('')
+      : `<p>${lastOrder.itemsSummary || ''}</p>`;
 
   const upiBlockHTML = lastOrder.isUpi
     ? `
       <div class="order-placed-upi-box">
-        <h3>💜 Complete Your UPI Payment</h3>
-        <p>Scan the QR code below using <strong>GPay, PhonePe, or Paytm</strong> to pay <strong>${currency}${lastOrder.totalAmount}</strong> (if you haven't paid already), then send your payment screenshot on WhatsApp so we can start packing your crochet order!</p>
+        <h3>💜 Complete Your UPI Payment (${currency}${lastOrder.totalAmount})</h3>
+        <p>On mobile? Tap the button below to open <strong>GPay, PhonePe, or Paytm</strong> with the exact amount pre-filled—or scan the QR code from another phone.</p>
+
+        <a href="${upiDeepLink}" class="upi-app-tap-btn">
+          📱 1-Tap Pay ${currency}${lastOrder.totalAmount} (GPay / PhonePe / Paytm)
+        </a>
+
+        <div class="upi-id-copy-row">
+          <span>UPI ID: <strong>${activeUpiId}</strong></span>
+          <button type="button" class="copy-upi-btn" onclick="copyUpiIdToClipboard('${escapeForAttr(activeUpiId)}', this)">📋 Copy UPI ID</button>
+        </div>
+
         <img src="${qrImageSrc}" alt="UPI QR Code" />
-        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:360px; margin-top:8px;">
+
+        <p style="font-size: 0.85rem; margin-bottom: 10px;">After paying, tap below to share your payment screenshot on WhatsApp so we confirm and start packing your order:</p>
+        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:380px;">
           💬 Send Payment Screenshot on WhatsApp
         </a>
       </div>
@@ -1200,7 +1379,7 @@ function renderOrderPlacedPage() {
     : `
       <div class="order-placed-wa-box">
         <p>Your order has been recorded! Tap the button below if WhatsApp didn't open automatically so we receive your order confirmation right away.</p>
-        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:360px; margin-top:10px;">
+        <a href="${lastOrder.whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-checkout-btn" style="display:inline-block; text-decoration:none; max-width:380px; margin-top:10px;">
           💬 Send Order Confirmation on WhatsApp
         </a>
       </div>
