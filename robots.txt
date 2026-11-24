@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /api/
 
-Sitemap: https://susan-mini-crochet.netlify.app/sitemap.xml
+Sitemap: https://susan-mini-crochet.pages.dev/sitemap.xml
