@@ -277,6 +277,22 @@ body {
   border-color: var(--deep-pink);
 }
 
+.catalog-alert-box {
+  grid-column: 1 / -1;
+  background: var(--bg-soft-pink);
+  border: 1.5px dashed var(--deep-pink);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  color: var(--rose-dark);
+}
+
+.catalog-alert-box p {
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-size: 0.92rem;
+}
+
 /* Product Grid & Cards with Image Slider, Zoom & Star Ratings */
 .product-grid {
   display: grid;
@@ -763,7 +779,7 @@ body {
   background: var(--bg-soft-pink);
   border: 1.5px dashed var(--pastel-pink);
   border-radius: 14px;
-  padding: 20px;
+  padding: 22px 18px;
   text-align: center;
   margin-bottom: 26px;
 }
@@ -778,7 +794,59 @@ body {
   font-size: 0.92rem;
   color: var(--text-muted);
   max-width: 560px;
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
+}
+
+.upi-app-tap-btn {
+  display: inline-block;
+  width: 100%;
+  max-width: 380px;
+  background: linear-gradient(135deg, #6C3CE9 0%, #5F259F 100%);
+  color: var(--white);
+  text-decoration: none;
+  padding: 14px 20px;
+  border-radius: 50px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(95, 37, 159, 0.28);
+  transition: opacity 0.2s, transform 0.15s;
+  margin: 4px auto 12px;
+}
+
+.upi-app-tap-btn:hover {
+  opacity: 0.94;
+  transform: translateY(-2px);
+}
+
+.upi-id-copy-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.86rem;
+  margin-bottom: 10px;
+}
+
+.copy-upi-btn {
+  background: var(--bg-soft-pink);
+  border: 1px solid var(--pastel-pink);
+  color: var(--rose-dark);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copy-upi-btn:hover {
+  background: var(--deep-pink);
+  color: var(--white);
+  border-color: var(--deep-pink);
 }
 
 .order-placed-upi-box img {
