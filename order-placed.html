@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Order Placed Successfully | Susan-mini-crochet</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Announcement Bar -->
+  <div class="announcement-bar" id="announcement-bar">
+    ✨ Free shipping on orders above ₹999 | COD & UPI Available!
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="brand-logo">
+      🧶 <span class="store-name-text">Susan-mini-crochet</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="about.html">About & Care</a></li>
+      <li><a href="contact.html">Contact & FAQ</a></li>
+    </ul>
+    <button class="cart-btn" onclick="toggleCart()">
+      🛒 Cart <span class="cart-count">0</span>
+    </button>
+  </nav>
+
+  <!-- Order Confirmation Section -->
+  <main class="container">
+    <div id="order-placed-container">
+      <p style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+        Loading your order details... 🧶
+      </p>
+    </div>
+  </main>
+
+  <!-- Slide-Out Cart Drawer -->
+  <div class="cart-overlay" id="cart-overlay">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <h3>🧶 Your Crochet Basket</h3>
+        <button class="close-cart" onclick="toggleCart(false)">×</button>
+      </div>
+      <div class="cart-body">
+        <div id="cart-items-list"></div>
+
+        <form id="checkout-form" class="checkout-form" onsubmit="checkoutWhatsApp(event)">
+          <h4>📦 Delivery & Payment Details</h4>
+          <div class="form-group">
+            <label for="cust-name">Full Name *</label>
+            <input type="text" id="cust-name" required placeholder="Enter your full name" />
+          </div>
+          <div class="form-group">
+            <label for="cust-phone">Mobile / WhatsApp Number *</label>
+            <input type="tel" id="cust-phone" required placeholder="10-digit mobile number" />
+          </div>
+          <div class="form-group">
+            <label for="cust-address">Full Delivery Address & PIN Code *</label>
+            <textarea id="cust-address" rows="3" required placeholder="House No., Street, City, State, PIN Code"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <div class="payment-options">
+              <label class="payment-option">
+                <input type="radio" name="payment-method" value="UPI (GPay / PhonePe / Paytm)" checked />
+                <span>UPI (GPay / PhonePe / Paytm)</span>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="payment-method" value="Bank Transfer" />
+                <span>Bank Transfer</span>
+              </label>
+              <label class="payment-option" id="cod-option-wrap">
+                <input type="radio" name="payment-method" value="Cash on Delivery (COD)" />
+                <span>Cash on Delivery (COD)</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="cart-footer">
+        <div class="cart-summary-row">
+          <span>Subtotal</span>
+          <span id="cart-subtotal">₹0</span>
+        </div>
+        <div class="cart-summary-row">
+          <span>Shipping</span>
+          <span id="cart-shipping">FREE</span>
+        </div>
+        <div class="cart-total-row">
+          <span>Total Payable</span>
+          <span id="cart-total">₹0</span>
+        </div>
+        <button type="submit" form="checkout-form" class="whatsapp-checkout-btn">
+          💬 Send Order on WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="social-links-container"></div>
+    <p>© 2026 <span class="store-name-text">Susan-mini-crochet</span>. Handmade with love 🧶</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
