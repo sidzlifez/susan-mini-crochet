@@ -1,6 +1,9 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: sidzlifez/susan-mini-crochet
   branch: main
+  base_url: https://susan-mini-crochet.pages.dev
+  auth_endpoint: api/auth
 
 # Cloudinary Media Library Integration
 media_library:
